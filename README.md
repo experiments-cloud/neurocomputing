@@ -18,7 +18,7 @@ The code is modularly designed to map directly to the methodological sections of
 
 For immediate reproducibility without re-training, we include the raw experimental results in JSON format:
 
-* **`grokking_telemetry_with_hessian_original.json`**: Full telemetry for the main experiment, including the Hessian $\lambda_{max}$ trajectory.
+* **`grokking_telemetry_with_hessian.json`**: Full telemetry for the main experiment, including the Hessian $\lambda_{max}$ trajectory.
 * **`telemetry_25pct_nowd.json`** & **`telemetry_10pct_nowd.json`**: Data for the structural limits ablation study (25% and 10% data density respectively).
 * **`telemetry_fast_learning.json`**: Records for accelerated learning scenarios under high data abundance.
 
