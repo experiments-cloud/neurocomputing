@@ -14,9 +14,9 @@ The code is modularly designed to map directly to the methodological sections of
 * **`hessian_topology.py`**: **Core analytical script.** Extracts the dominant eigenvalue $\lambda_{max}$ of the Hessian using Power Iteration and Hessian-Vector Products (HVP), strictly bounding spatial complexity to $\mathcal{O}(N)$.
 * **`visualize_paper.py`**: Generates the high-resolution 3-panel figure (macroscopic and spectral dynamics) exactly as presented in the manuscript.
 * **`grokking_optimizer_ablation.py`**: Optimizer ablation study. Evaluates the training and spectral dynamics across AdamW, standard Adam, and SGD to empirically demonstrate that the geometric pressure from decoupled weight decay is a strictly necessary condition to traverse the topological barrier and induce grokking.
-* **`tinystories_model.py`**: Architecture definition. Defines the 16M parameter causal Transformer for the TinyStories dataset, crucially implementing a native Math-based attention mechanism (unfused) to guarantee computational graph unrolling for double backward passes.
-* **`tinystories_data.py`**: Dataset pipeline. Handles the downloading and tokenization of the TinyStories corpus using the GPT-2 tokenizer, enforcing a strict sequence length truncation (MAX_LENGTH = 64) to manage VRAM limits during topology extraction.
-* **`tinystories_hvp_train.py`**: Natural language topology extraction. Executes the training loop and periodically extracts the dominant eigenvalue (λmax​) to trace the geometric signature of grokking across non-discrete semantic spaces.
+* **`tinystories_experiment\tinystories_model.py`**: Architecture definition. Defines the 16M parameter causal Transformer for the TinyStories dataset, crucially implementing a native Math-based attention mechanism (unfused) to guarantee computational graph unrolling for double backward passes.
+* **`tinystories_experiment\tinystories_data.py`**: Dataset pipeline. Handles the downloading and tokenization of the TinyStories corpus using the GPT-2 tokenizer, enforcing a strict sequence length truncation (MAX_LENGTH = 64) to manage VRAM limits during topology extraction.
+* **`tinystories_experiment\tinystories_hvp_train.py`**: Natural language topology extraction. Executes the training loop and periodically extracts the dominant eigenvalue (λmax​) to trace the geometric signature of grokking across non-discrete semantic spaces.
 
 ## 📊 Precomputed Telemetry & Data
 
@@ -32,7 +32,7 @@ To ensure proper double backpropagation for Hessian calculations, the following 
 
 ```bash
 
-pip install torch numpy matplotlib seaborn
+pip install -r requirements.txt
 
 ```
 
