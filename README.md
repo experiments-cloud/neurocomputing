@@ -13,6 +13,7 @@ The code is modularly designed to map directly to the methodological sections of
 * **`train_and_grok.py`**: Executes the asymptotic optimization loop (25,000 steps) to induce the phase transition. It allows toggling weight decay to evaluate its role as a catalyst for grokking.
 * **`hessian_topology.py`**: **Core analytical script.** Extracts the dominant eigenvalue $\lambda_{max}$ of the Hessian using Power Iteration and Hessian-Vector Products (HVP), strictly bounding spatial complexity to $\mathcal{O}(N)$.
 * **`visualize_paper.py`**: Generates the high-resolution 3-panel figure (macroscopic and spectral dynamics) exactly as presented in the manuscript.
+* **`grokking_optimizer_ablation.py`**: Optimizer ablation study. Evaluates the training and spectral dynamics across AdamW, standard Adam, and SGD to empirically demonstrate that the geometric pressure from decoupled weight decay is a strictly necessary condition to traverse the topological barrier and induce grokking.
 
 ## 📊 Precomputed Telemetry & Data
 
