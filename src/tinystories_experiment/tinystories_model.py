@@ -12,7 +12,7 @@ import torch.nn as nn
 import math
 
 # ==========================================
-# Módulo de Atención Matemática (Sin Fused Kernels)
+# Mathematical Attention Module (Unfused Computational Graph)
 # ==========================================
 class CausalSelfAttention(nn.Module):
     def __init__(self, d_model, n_heads, max_len):
@@ -20,11 +20,12 @@ class CausalSelfAttention(nn.Module):
         self.n_heads = n_heads
         self.d_k = d_model // n_heads
         
-        # Proyecciones lineales
+        # Linear projections
         self.qkv = nn.Linear(d_model, 3 * d_model)
         self.c_proj = nn.Linear(d_model, d_model)
         
-        # Máscara causal (triangular superior) registrada como buffer
+        # Explicit upper triangular causal mask registered as a buffer
+        # Mathematically prevents acausal information leakage
         self.register_buffer(
             "bias", 
             torch.tril(torch.ones(max_len, max_len)).view(1, 1, max_len, max_len)
@@ -33,7 +34,7 @@ class CausalSelfAttention(nn.Module):
     def forward(self, x):
         B, T, C = x.size()
         
-        # Cálculo de tensores Query, Key, Value
+        # Derivation of Query, Key, and Value tensors
         qkv = self.qkv(x)
         q, k, v = qkv.split(C, dim=2)
         
@@ -41,7 +42,8 @@ class CausalSelfAttention(nn.Module):
         k = k.view(B, T, self.n_heads, self.d_k).transpose(1, 2)
         v = v.view(B, T, self.n_heads, self.d_k).transpose(1, 2)
 
-        # Atención nativa explícita (Garantiza el flujo para HVP)
+        # Explicit native attention computation 
+        # (Guarantees exact double backpropagation flow for HVP extraction)
         att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(self.d_k))
         att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))
         att = torch.softmax(att, dim=-1)
@@ -52,11 +54,12 @@ class CausalSelfAttention(nn.Module):
         return self.c_proj(y)
 
 # ==========================================
-# Bloque Transformer (Pre-LN)
+# Transformer Block (Pre-LN Configuration)
 # ==========================================
 class TransformerBlock(nn.Module):
     def __init__(self, d_model, n_heads, d_ff, max_len):
         super().__init__()
+        # Pre-LN configuration explicitly bounds the variance of hidden states
         self.ln_1 = nn.LayerNorm(d_model)
         self.attn = CausalSelfAttention(d_model, n_heads, max_len)
         self.ln_2 = nn.LayerNorm(d_model)
@@ -72,7 +75,7 @@ class TransformerBlock(nn.Module):
         return x
 
 # ==========================================
-# Arquitectura Principal: TinyStoriesTransformer
+# Primary Architecture: TinyStoriesTransformer
 # ==========================================
 class TinyStoriesTransformer(nn.Module):
     def __init__(self, vocab_size, d_model=256, n_heads=8, d_ff=1024, n_layers=4, max_len=64):
@@ -86,10 +89,10 @@ class TinyStoriesTransformer(nn.Module):
         self.ln_f = nn.LayerNorm(d_model)
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
         
-        # Tie weights (Vincular pesos de embedding y salida para ahorrar RAM)
+        # Weight tying: Coupling embedding and LM head weights to optimize spatial complexity
         self.lm_head.weight = self.token_emb.weight
         
-        # Condicionamiento Topológico: Inicialización estricta Xavier
+        # Topological Conditioning: Strict Xavier parameter initialization
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -104,19 +107,19 @@ class TinyStoriesTransformer(nn.Module):
         B, T = idx.size()
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         
-        # Representación latente inicial
+        # Initial latent manifold representation
         x = self.token_emb(idx) + self.pos_emb(pos)
         
-        # Propagación a través de los bloques
+        # Forward propagation through structural blocks
         x = self.blocks(x)
         x = self.ln_f(x)
         
-        # Proyección al vocabulario
+        # Linear projection into the discrete vocabulary space
         logits = self.lm_head(x)
         
         loss = None
         if targets is not None:
-            # Flatten de logits y targets para Cross Entropy
+            # Flattening of logits and targets for precise Cross-Entropy evaluation
             logits_view = logits.view(-1, logits.size(-1))
             targets_view = targets.view(-1)
             loss = nn.functional.cross_entropy(logits_view, targets_view)
@@ -124,37 +127,38 @@ class TinyStoriesTransformer(nn.Module):
         return logits, loss
 
 # ==========================================
-# Instanciación y Verificación Independiente
+# Instantiation and Independent Analytical Verification
 # ==========================================
-from transformers import AutoTokenizer
+if __name__ == "__main__":
+    from transformers import AutoTokenizer
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Dispositivo de entrenamiento: {device}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Hardware architecture: {device}")
 
-# 1. Cargamos rápidamente el tokenizador solo para obtener el vocab_size
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-tokenizer.pad_token = tokenizer.eos_token
-vocab_size = tokenizer.vocab_size
-MAX_LENGTH = 64 # Aseguramos que la constante esté definida
+    # 1. Initialize tokenizer strictly to extract the vocabulary dimension (vocab_size)
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    tokenizer.pad_token = tokenizer.eos_token
+    vocab_size = tokenizer.vocab_size
+    MAX_LENGTH = 64 # Ensure strict bounding of the spatial context
 
-# 2. Instanciamos el modelo
-model = TinyStoriesTransformer(
-    vocab_size=vocab_size,
-    d_model=256,
-    n_heads=8,
-    d_ff=1024,
-    n_layers=4,
-    max_len=MAX_LENGTH
-).to(device)
+    # 2. Architecture instantiation
+    model = TinyStoriesTransformer(
+        vocab_size=vocab_size,
+        d_model=256,
+        n_heads=8,
+        d_ff=1024,
+        n_layers=4,
+        max_len=MAX_LENGTH
+    ).to(device)
 
-total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(f"Parámetros entrenables totales: {total_params:,}")
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters (N): {total_params:,}")
 
-# 3. Creamos un batch sintético para probar que la arquitectura compila y el forward pass funciona
-# Dimensiones: [Batch_Size=128, Secuencia=64]
-input_batch = torch.randint(0, vocab_size, (128, MAX_LENGTH)).to(device)
-labels_batch = torch.randint(0, vocab_size, (128, MAX_LENGTH)).to(device)
+    # 3. Generate a synthetic batch to mathematically verify graph compilation and forward propagation
+    # Tensor dimensions: [Batch_Size=128, Sequence_Length=64]
+    input_batch = torch.randint(0, vocab_size, (128, MAX_LENGTH)).to(device)
+    labels_batch = torch.randint(0, vocab_size, (128, MAX_LENGTH)).to(device)
 
-logits, loss = model(input_batch, targets=labels_batch)
-print(f"Forma de los logits de salida: {logits.shape}")
-print(f"Pérdida inicial pre-entrenamiento: {loss.item():.4f}")
+    logits, loss = model(input_batch, targets=labels_batch)
+    print(f"Output logits tensor shape: {logits.shape}")
+    print(f"Initial untrained cross-entropy loss: {loss.item():.4f}")
